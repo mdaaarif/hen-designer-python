@@ -186,6 +186,14 @@ function setupEventListeners() {
   // Touch dragging support
   svg.addEventListener('touchmove', handleSvgTouchMove, { passive: false });
   svg.addEventListener('touchend', handleSvgMouseUp);
+
+  // View mode toggles
+  document.getElementById('btn-view-scroll').addEventListener('click', () => {
+    setViewMode('scroll');
+  });
+  document.getElementById('btn-view-fit').addEventListener('click', () => {
+    setViewMode('fit');
+  });
 }
 
 // --- Load Selected Example ---
@@ -840,6 +848,7 @@ function drawHenGrid() {
 
   svg.setAttribute('height', currentY + 30);
   svg.setAttribute('width', w);
+  svg.setAttribute('viewBox', `0 0 ${w} ${currentY + 30}`);
 
   // 1. Pinch Line
   const pinchX = (getSlotX(4) + getSlotX(5)) / 2;
@@ -1097,9 +1106,10 @@ async function handleSvgMouseMove(e) {
 
   const svg = document.getElementById('hen-svg');
   const rect = svg.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-
   const w = 1000;
+  const scaleFactor = rect.width ? (w / rect.width) : 1;
+  const mouseX = (e.clientX - rect.left) * scaleFactor;
+
   const paddingLeft = 100;
   const paddingRight = 100;
   const activeW = w - paddingLeft - paddingRight;
@@ -1132,9 +1142,10 @@ async function handleSvgTouchMove(e) {
   const svg = document.getElementById('hen-svg');
   const rect = svg.getBoundingClientRect();
   const touch = e.touches[0];
-  const mouseX = touch.clientX - rect.left;
-
   const w = 1000;
+  const scaleFactor = rect.width ? (w / rect.width) : 1;
+  const mouseX = (touch.clientX - rect.left) * scaleFactor;
+
   const paddingLeft = 100;
   const paddingRight = 100;
   const activeW = w - paddingLeft - paddingRight;
@@ -1245,5 +1256,23 @@ async function autoDesignNetwork() {
     renderAll();
   } catch (err) {
     console.error("Auto design error:", err);
+  }
+}
+
+// --- View Mode Selector (Scrollable vs Fit Screen) ---
+function setViewMode(mode) {
+  state.viewMode = mode;
+  const svg = document.getElementById('hen-svg');
+  const btnScroll = document.getElementById('btn-view-scroll');
+  const btnFit = document.getElementById('btn-view-fit');
+
+  if (mode === 'fit') {
+    svg.classList.add('fit-screen');
+    btnScroll.className = 'btn btn-xs btn-outline';
+    btnFit.className = 'btn btn-xs btn-primary active';
+  } else {
+    svg.classList.remove('fit-screen');
+    btnScroll.className = 'btn btn-xs btn-primary active';
+    btnFit.className = 'btn btn-xs btn-outline';
   }
 }
