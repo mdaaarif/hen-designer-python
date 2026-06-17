@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Heat Exchanger Network (HEN) Designer & Pinch Solver</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- App Container -->
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="8" cy="8" r="4" stroke="currentColor"/>
+          <circle cx="16" cy="16" r="4" stroke="currentColor"/>
+          <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor"/>
+          <line x1="8" y1="8" x2="8" y2="16" stroke="currentColor" stroke-dasharray="2 2"/>
+          <line x1="16" y1="8" x2="16" y2="16" stroke="currentColor" stroke-dasharray="2 2"/>
+        </svg>
+        <div>
+          <h1>PinchHEN Designer</h1>
+          <p class="subtitle">Pinch Analysis & Heat Exchanger Network Synthesis</p>
+        </div>
+      </div>
+      
+      <div class="global-controls">
+        <div class="control-group">
+          <label for="example-select">Preloaded Case:</label>
+          <select id="example-select">
+            <option value="example4">Classic 4-Stream Case</option>
+            <option value="example5">5-Stream Refinery Case</option>
+            <option value="custom">Custom Configuration</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="tmin-input">ΔT<sub>min</sub> (°C):</label>
+          <div class="slider-wrapper">
+            <input type="range" id="tmin-slider" min="5" max="40" step="1" value="10">
+            <span id="tmin-value">10 °C</span>
+          </div>
+        </div>
+        <button id="upload-header-btn" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" style="vertical-align: middle; margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          Upload Excel
+        </button>
+        <button id="reset-btn" class="btn btn-outline">Reset</button>
+      </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="app-main">
+      
+      <!-- Left Sidebar: Streams and Settings -->
+      <aside class="sidebar">
+        
+        <!-- Stream Input Card -->
+        <div class="card card-streams">
+          <div class="card-header">
+            <h2>Process Streams</h2>
+            <button id="add-stream-btn" class="btn btn-xs btn-primary">+ Add Stream</button>
+          </div>
+          <div class="card-body scrollable">
+            <table class="streams-table" id="streams-table">
+              <thead>
+                <tr>
+                  <th>Stream</th>
+                  <th>Type</th>
+                  <th>T<sub>in</sub> (°C)</th>
+                  <th>T<sub>out</sub> (°C)</th>
+                  <th>CP (MW/°C)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="streams-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Thermodynamic Targets Card -->
+        <div class="card card-targets">
+          <div class="card-header">
+            <h2>Thermodynamic Targets</h2>
+          </div>
+          <div class="card-body">
+            <div class="targets-grid">
+              <div class="target-item">
+                <span class="target-label">Hot Utility (Q<sub>H,min</sub>)</span>
+                <span class="target-val" id="target-qh">0.00 <span class="unit">MW</span></span>
+              </div>
+              <div class="target-item">
+                <span class="target-label">Cold Utility (Q<sub>C,min</sub>)</span>
+                <span class="target-val" id="target-qc">0.00 <span class="unit">MW</span></span>
+              </div>
+              <div class="target-item">
+                <span class="target-label">Pinch Temp (Shifted)</span>
+                <span class="target-val highlight" id="target-pinch-shifted">0.0 <span class="unit">°C</span></span>
+              </div>
+              <div class="target-item">
+                <span class="target-label">Pinch Temp (Hot / Cold)</span>
+                <span class="target-val" id="target-pinch-real">0.0 / 0.0 <span class="unit">°C</span></span>
+              </div>
+              <div class="target-item span-2">
+                <span class="target-label">Min. Heat Exchanger Units (N<sub>min</sub>)</span>
+                <span class="target-val" id="target-nmin">0 <span class="unit">units</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- Center Workspace: Tabs for Grid & Curves -->
+      <section class="workspace">
+        
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+          <button class="tab-btn active" data-tab="hen-tab">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+            Interactive Grid Diagram
+          </button>
+          <button class="tab-btn" data-tab="composite-tab">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+            Composite Curves (T-H)
+          </button>
+          <button class="tab-btn" data-tab="gcc-tab">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 16l4-8 4 6 4-11"/></svg>
+            Grand Composite Curve (GCC)
+          </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          
+          <!-- Tab 1: HEN Grid Designer -->
+          <div class="tab-pane active" id="hen-tab">
+            <div class="grid-controls">
+              <button id="add-exchanger-btn" class="btn btn-secondary">+ Add Exchanger Match</button>
+              <button id="add-utility-btn" class="btn btn-secondary">+ Add Utility (Heater/Cooler)</button>
+              <button id="auto-design-btn" class="btn btn-primary">Auto-Design Network</button>
+              <button id="clear-design-btn" class="btn btn-outline">Clear Network</button>
+            </div>
+            
+            <!-- Grid Scroll Container -->
+            <div class="grid-canvas-container">
+              <!-- Grid Header with temperature scale alignment -->
+              <div class="grid-scale">
+                <div class="scale-label left">HOT (Above Pinch)</div>
+                <div class="scale-label center">PINCH POINT</div>
+                <div class="scale-label right">COLD (Below Pinch)</div>
+              </div>
+              
+              <!-- SVG Canvas for Grid -->
+              <svg id="hen-svg" class="hen-svg" width="800" height="400">
+                <!-- Grid background and streams are dynamically drawn here -->
+              </svg>
+            </div>
+
+            <!-- Contextual Editor panel (shows up when clicking a match) -->
+            <div id="editor-panel" class="editor-panel hidden">
+              <h3>Edit Match Properties</h3>
+              <div class="editor-row">
+                <label for="edit-load">Heat Load (Q):</label>
+                <input type="number" id="edit-load" step="0.1" min="0.1">
+                <span class="unit">MW</span>
+              </div>
+              <div class="editor-row editor-buttons">
+                <button id="save-edit-btn" class="btn btn-xs btn-primary">Apply</button>
+                <button id="delete-match-btn" class="btn btn-xs btn-danger">Delete Match</button>
+                <button id="cancel-edit-btn" class="btn btn-xs btn-outline">Cancel</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 2: Composite Curves -->
+          <div class="tab-pane" id="composite-tab">
+            <div class="chart-container">
+              <svg id="composite-svg" class="chart-svg" viewBox="0 0 800 500">
+                <!-- Dynamically drawn -->
+              </svg>
+              <div class="chart-legend">
+                <div class="legend-item"><span class="legend-color hot"></span>Hot Composite Curve</div>
+                <div class="legend-item"><span class="legend-color cold"></span>Cold Composite Curve</div>
+                <div class="legend-item"><span class="legend-color pinch"></span>Pinch Point</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Grand Composite Curve -->
+          <div class="tab-pane" id="gcc-tab">
+            <div class="chart-container">
+              <svg id="gcc-svg" class="chart-svg" viewBox="0 0 600 500">
+                <!-- Dynamically drawn -->
+              </svg>
+              <div class="chart-legend">
+                <div class="legend-item"><span class="legend-color gcc"></span>Grand Composite Curve (GCC)</div>
+                <div class="legend-item"><span class="legend-color pinch-shifted"></span>Pinch Temperature (Shifted)</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- Right Sidebar: Live Diagnostics and Design Console -->
+      <aside class="sidebar-right">
+        
+        <!-- Live Validation Card -->
+        <div class="card card-diagnostics">
+          <div class="card-header">
+            <h2>Design Diagnostics</h2>
+            <span class="badge badge-success" id="network-status-badge">Feasible</span>
+          </div>
+          <div class="card-body scrollable">
+            
+            <div class="progress-section">
+              <h3>Utility Alignment</h3>
+              <div class="progress-bar-container">
+                <span class="progress-label">Hot Utility: <span id="diag-qh-actual">0.0</span> / <span id="diag-qh-target">0.0</span> MW</span>
+                <div class="progress-bar">
+                  <div class="progress-fill hot" id="fill-qh"></div>
+                </div>
+              </div>
+              <div class="progress-bar-container">
+                <span class="progress-label">Cold Utility: <span id="diag-qc-actual">0.0</span> / <span id="diag-qc-target">0.0</span> MW</span>
+                <div class="progress-bar">
+                  <div class="progress-fill cold" id="fill-qc"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="diagnostic-list" id="diagnostic-list">
+              <!-- Dynamic validation reports (crossovers, pinch violations, etc.) -->
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Stream Satisfaction Progress -->
+        <div class="card card-satisfaction">
+          <div class="card-header">
+            <h2>Stream Satisfaction</h2>
+          </div>
+          <div class="card-body scrollable">
+            <div class="satisfaction-list" id="satisfaction-list">
+              <!-- Stream progress trackers -->
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+    </main>
+
+  </div>
+
+  <!-- Upload Modal Overlay -->
+  <div id="upload-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Load Process Stream Data</h2>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Upload your Excel workbook to automatically calculate Pinch targets and populate the stream table.
+        </p>
+        
+        <div class="excel-specs">
+          <div class="spec-col">
+            <h4>Sheet 1: "Streams"</h4>
+            <ul>
+              <li><strong>Stream:</strong> ID/Name (e.g., H1, C2)</li>
+              <li><strong>Type:</strong> "hot" or "cold"</li>
+              <li><strong>Tin:</strong> Supply Temperature (°C)</li>
+              <li><strong>Tout:</strong> Target Temperature (°C)</li>
+              <li><strong>MCp:</strong> Heat Capacity (MW/°C)</li>
+            </ul>
+          </div>
+          <div class="spec-col">
+            <h4>Sheet 2: "Settings"</h4>
+            <ul>
+              <li><strong>Parameter:</strong> "Tmin"</li>
+              <li><strong>Value:</strong> ΔT<sub>min</sub> value (e.g., 10)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="drop-zone" id="drop-zone">
+          <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          <p>Drag & drop your Excel file here or <span class="highlight">browse files</span></p>
+          <div class="file-name-display" id="file-name-display"></div>
+          <input type="file" id="file-input" accept=".xlsx, .xls" style="display: none;">
+        </div>
+
+        <div class="modal-footer-btns">
+          <button id="skip-modal-btn" class="btn btn-outline">Skip & Use Default Example</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
