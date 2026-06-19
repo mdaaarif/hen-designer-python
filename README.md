@@ -34,7 +34,26 @@ Every network modification instantly triggers a simulation validation engine ret
     *   *Below the Pinch:* $mCp_{hot} \ge mCp_{cold}$
 
 ### 5. Excel Upload Integration
-*   Allows bulk stream importing using standard spreadsheets. The workbook expects a `Streams` sheet containing `Stream`, `Type` (hot/cold), `Tin` (supply temp), `Tout` (target temp), and `MCp` (heat capacity flow rate) headers, and a `Settings` sheet with `Tmin`.
+Allows bulk stream importing using a single Excel workbook (`.xlsx`) containing exactly **two sheets**:
+
+#### Sheet 1: `Streams`
+Defines the process stream parameters.
+*   **Required Columns:** `Stream`, `Type`, `Tin`, `Tout`, `MCp`
+
+| Stream | Type | Tin | Tout | MCp |
+| :--- | :--- | :--- | :--- | :--- |
+| **H1** | Hot | 210 | 60 | 0.1 |
+| **H2** | Hot | 180 | 30 | 0.2 |
+| **C3** | Cold | 40 | 100 | 0.15 |
+| **C4** | Cold | 60 | 200 | 0.3 |
+
+#### Sheet 2: `Settings`
+Defines the global parameters.
+*   **Required Columns:** `Parameter`, `Value`
+
+| Parameter | Value |
+| :--- | :--- |
+| **Tmin** | 10 |
 
 ---
 
