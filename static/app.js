@@ -614,12 +614,12 @@ function drawCompositeCurves() {
   // Axes labels
   const xl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   xl.setAttribute('x', w / 2); xl.setAttribute('y', h - 10); xl.setAttribute('text-anchor', 'middle'); xl.setAttribute('class', 'chart-axis-text');
-  xl.setAttribute('style', 'font-size:12px; fill:#fff;');
+  xl.setAttribute('style', 'font-size:12px; fill:var(--text-main);');
   xl.textContent = 'Enthalpy Heat Duty (MW)';
   const yl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   yl.setAttribute('x', 15); yl.setAttribute('y', h / 2); yl.setAttribute('text-anchor', 'middle'); yl.setAttribute('class', 'chart-axis-text');
   yl.setAttribute('transform', `rotate(-90, 15, ${h / 2})`);
-  yl.setAttribute('style', 'font-size:12px; fill:#fff;');
+  yl.setAttribute('style', 'font-size:12px; fill:var(--text-main);');
   yl.textContent = 'Temperature (°C)';
   axes.appendChild(xl); axes.appendChild(yl);
   svg.appendChild(axes);
@@ -659,7 +659,7 @@ function drawCompositeCurves() {
   dashLine.setAttribute('y1', scaleY(pinchCold));
   dashLine.setAttribute('x2', scaleX(px_hot));
   dashLine.setAttribute('y2', scaleY(pinchHot));
-  dashLine.setAttribute('stroke', '#fff');
+  dashLine.setAttribute('stroke', 'var(--text-logo)');
   dashLine.setAttribute('stroke-dasharray', '4 4');
   dashLine.setAttribute('stroke-width', '1.5');
   pinchGroup.appendChild(dashLine);
@@ -744,12 +744,12 @@ function drawGrandCompositeCurve() {
   // Labels
   const xl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   xl.setAttribute('x', w / 2); xl.setAttribute('y', h - 10); xl.setAttribute('text-anchor', 'middle'); xl.setAttribute('class', 'chart-axis-text');
-  xl.setAttribute('style', 'font-size:12px; fill:#fff;');
+  xl.setAttribute('style', 'font-size:12px; fill:var(--text-main);');
   xl.textContent = 'Revised Cascade Heat Flow (MW)';
   const yl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
   yl.setAttribute('x', 15); yl.setAttribute('y', h / 2); yl.setAttribute('text-anchor', 'middle'); yl.setAttribute('class', 'chart-axis-text');
   yl.setAttribute('transform', `rotate(-90, 15, ${h / 2})`);
-  yl.setAttribute('style', 'font-size:12px; fill:#fff;');
+  yl.setAttribute('style', 'font-size:12px; fill:var(--text-main);');
   yl.textContent = 'Shifted Temperature (°C)';
   axes.appendChild(xl); axes.appendChild(yl);
   svg.appendChild(axes);
